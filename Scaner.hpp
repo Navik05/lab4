@@ -16,7 +16,7 @@ private:
 public:
     void PutUK (int);
     int GetUK ();
-    void PrintError(const char *);
+    void PrintError(const char *, const char *);
     int Scaner (TypeLex);
     void GetData(const char *);
     TScaner(const char *);

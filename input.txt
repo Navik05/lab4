@@ -1,1 +1,8 @@
-;,{}#
+//const char a = true, b='n', c=1.5e+6;
+//bool naim (){}
+//char b= , a; 
+int main (){
+    for(a='t';a>=b || a<b ; a= a+false) {
+        b= false;
+    }
+}

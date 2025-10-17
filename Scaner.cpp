@@ -13,8 +13,13 @@ int TScaner::GetUK(){
     return uk;
 }
 
-void TScaner::PrintError(const char * err){
-    printf("Ошибка : %s \n",err);
+void TScaner::PrintError(const char * err, const char * a){
+    if (a[0]=='\0')
+        printf("Ошибка : %s \n",err);
+    else
+    printf("Ошибка : %s. Неверный символ %s\n",err,a);
+    exit(0);
+
 }
 
 void TScaner::GetData(const char *FileName)
@@ -22,7 +27,7 @@ void TScaner::GetData(const char *FileName)
     // Открытие файла
     FILE * in = fopen(FileName,"r");
     if(in==NULL){
-        PrintError("Не удалось открыть файл");
+        PrintError("Не удалось открыть файл", "");
         exit(EXIT_FAILURE);
     }
 
@@ -35,7 +40,7 @@ void TScaner::GetData(const char *FileName)
         fscanf(in, "%c", &symbol);
         if(!feof(in)) t[i]=symbol;
         if(i>=len){
-            PrintError("Слишком большой размер исходного модуля");
+            PrintError("Слишком большой размер исходного модуля", "");
             break;
         }
     }
@@ -68,7 +73,7 @@ int TScaner::Scaner(TypeLex l){
 
     // Пропуск комментария
     if((t[uk]=='/') && (t[uk+1]=='/')){
-        for(uk+=2; t[uk]!='\n'; uk++) ;
+        for(uk+=2; t[uk]!='\n' && t[uk]!='\0'; uk++) ;
         goto start;
 
     }
@@ -114,7 +119,7 @@ N2:                     l[i++]=t[uk++];
         if( (t[uk]=='E')||(t[uk]=='e') ) 
             goto N1; 
         
-        PrintError("Неверная вещественная константа в экспоненциальной форме");
+        PrintError("Неверная вещественная константа в экспоненциальной форме", "");
         return TErr;
     }
     else if (t[uk]=='.'){
@@ -122,7 +127,7 @@ N2:                     l[i++]=t[uk++];
         if ((t[uk]>='0') && (t[uk]<='9'))
             goto N3;
         else{
-            PrintError("Неверная вещественная константа в экспоненциальной форме");
+            PrintError("Неверная вещественная константа в экспоненциальной форме", "");
             return TErr;
         }
     }
@@ -155,7 +160,7 @@ N2:                     l[i++]=t[uk++];
                 return TConstChar;
             }     
         }
-        PrintError("Неверная символьная константа");
+        PrintError("Неверная символьная константа","");
         return TErr;
     }
 
@@ -240,7 +245,7 @@ N2:                     l[i++]=t[uk++];
             l[i++]=t[uk++]; 
             return TAnd; 
         }
-        PrintError("Неверная логическая операция");
+        PrintError("Неверная логическая операция", "");
         return TErr;
     }
     else if (t[uk]=='|'){
@@ -249,14 +254,14 @@ N2:                     l[i++]=t[uk++];
             l[i++]=t[uk++]; 
             return TOr; 
         }
-        PrintError("Неверная логическая операция");
+        PrintError("Неверная логическая операция", "");
         return TErr;
     }
     
     // Несуществующий символ
     else { 
-        PrintError("Несуществующий символ");
-        l[i++]=t[uk++];
+        PrintError("Несуществующий символ", l);
+        uk++;
         return TErr;
     }
 }
