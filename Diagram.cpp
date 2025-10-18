@@ -66,7 +66,7 @@ void TDiagram::D(){
     if(t!=TFLS) sc->PrintError("ожидался символ {",l);
     F();
     t=sc->Scaner(l);
-    if(t!=TFPS) sc->PrintError("ожидался символ }",l);
+    if(t!=TFPS && t!=TEnd) sc->PrintError("ожидался символ }",l);
 }
 
 // список
@@ -78,14 +78,23 @@ void TDiagram::F(){
         f=0;
         uk=sc->GetUK();
         t=sc->Scaner(l);
-        sc->PutUK(uk);
 
-        if(t==TTrue || t==TFalse || t==TConsExp || t==TConstChar) {
-            I();
-            f=1;
+        if(t==TBool || t==TChar || t==TDouble) {
+            t=sc->Scaner(l);
+            t=sc->Scaner(l);
+            sc->PutUK(uk);
+            if(t==TLS){
+                D();
+                f=1;
+            }
+            else {
+                I();
+                f=1;
+            }
         }
         else if(t==TFLS || t==TFor || t==TConst || t==TReturn || 
             t==TIdent || t==TTZpt){
+            sc->PutUK(uk);
             H();
             f=1;
         }
