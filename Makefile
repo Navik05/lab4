@@ -8,7 +8,7 @@ CFLAGS = -Wall -g
 TARGET = scanner
 
 # Исходные файлы
-SOURCES = main.cpp Scaner.cpp Diagram.cpp
+SOURCES = main.cpp Scaner.cpp Diagram.cpp Semant.cpp
 
 # Объектные файлы
 OBJECTS = $(SOURCES:.cpp=.o)

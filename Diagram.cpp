@@ -1,4 +1,7 @@
 #include "Diagram.hpp"
+#include "Semant.hpp"
+
+Tree * Root;
 
 // программа
 void TDiagram::S(){
@@ -66,7 +69,7 @@ void TDiagram::D(){
     if(t!=TFLS) sc->PrintError("ожидался символ {",l);
     F();
     t=sc->Scaner(l);
-    if(t!=TFPS && t!=TEnd) sc->PrintError("ожидался символ }",l);
+    if(t!=TFPS) sc->PrintError("ожидался символ }",l);
 }
 
 // список
@@ -97,6 +100,10 @@ void TDiagram::F(){
             sc->PutUK(uk);
             H();
             f=1;
+        }
+        else if(t==TFPS) {
+            sc->PutUK(uk);
+            return;
         }
     }
 }
@@ -145,16 +152,14 @@ void TDiagram::H(){
     uk=sc->GetUK();
     t=sc->Scaner(l);
 
-    if(t==TFLS || t==TFor){
-        if(t==TFLS) {
-            F();
-            t=sc->Scaner(l);
-            if(t!=TFPS) sc->PrintError("ожидался символ }",l);
-        }
-        else {
-            sc->PutUK(uk);
-            X();
-        }
+    if(t==TFLS){
+        F();
+        t=sc->Scaner(l);
+        if(t!=TFPS) sc->PrintError("ожидался символ }",l);
+    }
+    else if(t==TFor){
+        sc->PutUK(uk);
+        X();
     }
     else{
         if(t==TConst){

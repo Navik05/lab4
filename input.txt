@@ -1,8 +1,12 @@
 int main ()
 {
-    for(a ;a>=c;a=a+false){
-        bool e = +(-(+(!(1.5e-7))));
-        for(;;);
+    double e(){    }
+    for(a='b';a>=b && a<c || a!=v ;){
+        for(;;){
+            char a;
+        }
+        char a;
     }
+    char a;
+    a=b+'c';
 }
-

@@ -16,11 +16,10 @@ private:
 public:
     void PutUK (int);
     int GetUK ();
-    void PrintError(const char *, const char *);
+    static void PrintError(const char *, const char *);
     int Scaner (TypeLex);
     void GetData(const char *);
     TScaner(const char *);
     ~TScaner() {}
 };
-
 #endif

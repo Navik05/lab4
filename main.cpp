@@ -1,5 +1,6 @@
 #include "Scaner.hpp"
 #include "Diagram.hpp"
+#include "Semant.hpp"
 
 int main()
 {
