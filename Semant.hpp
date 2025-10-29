@@ -6,6 +6,8 @@
 #include <string.h>
 #include <algorithm>
 
+extern class TScaner* globalScanner;
+
 enum DATA_TYPE {TYPE_UNKNOWN=1, TYPE_BOOL, TYPE_CHAR, TYPE_DOUBLE, 
     TYPE_INTEGER, TYPE_FUNCT, TYPE_CONST
 };

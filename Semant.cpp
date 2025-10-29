@@ -1,5 +1,7 @@
 #include "Semant.hpp"
 
+TScaner* globalScanner = nullptr;
+
 // конструктор создает узел с заданными связями и данными
 Tree::Tree (Tree * l, Tree * r, Tree * u, Node * d){
     n= new Node();
@@ -71,8 +73,7 @@ Tree* Tree::Cur=(Tree*)NULL;
 // занесение идентификатора a в таблицу с типом t
 Tree * Tree::SemInclude(TypeLex a, DATA_TYPE t){
     if (DupControl(Cur, a))
-        TScaner::PrintError("Повторное описание идентификатора ",a);
-
+        globalScanner->PrintError("Повторное описание идентификатора ",a,   globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
     Tree * v;
     Node b;
     if (t!=TYPE_FUNCT){
@@ -110,16 +111,16 @@ void Tree::SemSetType(Tree* Addr, DATA_TYPE t) {
 // найти в таблице переменную с именем a и вернуть ссылку на соответствующий элемент дерева
 Tree * Tree::SemGetType(TypeLex a){
     Tree * v=FindUp(a);
-    if (v==NULL) TScaner::PrintError("Отсутствует описание идентификатора ",a);
-    if (v->n->DataType==TYPE_FUNCT) TScaner::PrintError("Неверное использование вызова функции ",a);
+    if (v==NULL) globalScanner->PrintError("Отсутствует описание идентификатора ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+    if (v->n->DataType==TYPE_FUNCT) globalScanner->PrintError("Неверное использование вызова функции ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
     return v;
 }
 
 // найти в таблице функцию с именем a и вернуть ссылку на соответствующий элемент дерева
 Tree * Tree::SemGetFunct(TypeLex a) {
     Tree * v=FindUp(a);
-    if (v==NULL) TScaner::PrintError("Отсутствует описание функции ",a);
-    if (v->n->DataType!=TYPE_FUNCT) TScaner::PrintError("Не является функцией идентификатор ",a);
+    if (v==NULL) globalScanner->PrintError("Отсутствует описание функции ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+    if (v->n->DataType!=TYPE_FUNCT) globalScanner->PrintError("Не является функцией идентификатор ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
     return v;
 }
 

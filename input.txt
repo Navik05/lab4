@@ -1,12 +1,10 @@
-int main ()
-{
-    double e(){    }
-    for(a='b';a>=b && a<c || a!=v ;){
+int main (){
+    for(;;){
         for(;;){
-            char a;
+            char a
         }
-        char a;
     }
-    char a;
-    a=b+'c';
 }
+
+
+

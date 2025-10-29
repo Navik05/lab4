@@ -1,25 +1,64 @@
 #include "Scaner.hpp"
+#include "Semant.hpp"
 
 TScaner::TScaner(const char *FileName){
+    currentLine = 1;
+    currentColumn = 1;
+    // Инициализируем массив начал строк
+    for(int i = 0; i < MaxText; i++) {
+        lineStarts[i] = 0;
+    }
     GetData(FileName);
     PutUK(0);
 }
 
+void TScaner::UpdatePosition() {
+    // Пересчитываем позицию с начала файла
+    currentLine = 1;
+    currentColumn = 1;
+    
+    for(int pos = 0; pos < uk && pos < MaxText; pos++) {
+        if(t[pos] == '\n') {
+            currentLine++;
+            currentColumn = 1;
+        } else {
+            currentColumn++;
+        }
+    }
+}
+
 void TScaner::PutUK(int i){
-    uk=i;
+    uk = i;
+    UpdatePosition();
 }
 
 int TScaner::GetUK(){
     return uk;
 }
 
-void TScaner::PrintError(const char * err, const char * a){
-    if (a[0]=='\0')
-        printf("Ошибка : %s \n",err);
-    else
-    printf("Ошибка : %s. Неверный символ %s\n",err,a);
-    exit(0);
+int TScaner::GetCurrentLine() {
+    return currentLine;
+}
 
+int TScaner::GetCurrentColumn() {
+    return currentColumn;
+}
+
+void TScaner::PrintError(const char * err, const char * a, int line, int column){
+    if (line == -1) {
+        // Если строка не указана, используем информацию о текущей позиции
+        if (a[0]=='\0')
+            printf("Ошибка : %s \n",err);
+        else
+            printf("Ошибка : %s. Неверный символ '%s'\n",err,a);
+    } else {
+        // Выводим информацию о строке и позиции
+        if (a[0]=='\0')
+            printf("Ошибка в строке %d, позиция %d: %s \n", line, column, err);
+        else
+            printf("Ошибка в строке %d, позиция %d: %s. Неверный символ '%s'\n", line, column, err, a);
+    }
+    exit(0);
 }
 
 void TScaner::GetData(const char *FileName)
@@ -38,7 +77,9 @@ void TScaner::GetData(const char *FileName)
 
     for(i = 0; !feof(in); i++){
         fscanf(in, "%c", &symbol);
-        if(!feof(in)) t[i]=symbol;
+        if(!feof(in)) {
+            t[i]=symbol;
+        }
         if(i>=len){
             PrintError("Слишком большой размер исходного модуля", "");
             break;
@@ -61,6 +102,8 @@ int IndexKeyword[MaxKeyw]={ TConst, TBool,
 
 int TScaner::Scaner(TypeLex l){
     int i;          // текущая длина лексемы
+    int errorLine = currentLine;   // сохраняем позицию для ошибок
+    int errorColumn = currentColumn;
     
     // Очистили поле лексемы
     for (i=0;i<MaxLex;i++) l[i]=0;
@@ -69,13 +112,31 @@ int TScaner::Scaner(TypeLex l){
     
     start:
     // Пропуск незначащих элементов
-    while((t[uk]==' ') || (t[uk]=='\n') || (t[uk]=='\t')) uk++;
+    while((t[uk]==' ') || (t[uk]=='\n') || (t[uk]=='\t')) {
+        if(t[uk] == '\n') {
+            errorLine++;
+            errorColumn = 1;
+        } else {
+            errorColumn++;
+        }
+        uk++;
+    }
+
+    // Обновляем позицию после пропуска пробелов
+    errorLine = currentLine;
+    errorColumn = currentColumn;
 
     // Пропуск комментария
     if((t[uk]=='/') && (t[uk+1]=='/')){
-        for(uk+=2; t[uk]!='\n' && t[uk]!='\0'; uk++) ;
+        for(uk+=2; t[uk]!='\n' && t[uk]!='\0'; uk++) {
+            if(t[uk] == '\n') {
+                errorLine++;
+                errorColumn = 1;
+            } else {
+                errorColumn++;
+            }
+        }
         goto start;
-
     }
 
     // Конец исходного модуля
@@ -84,7 +145,7 @@ int TScaner::Scaner(TypeLex l){
         return TEnd;
     }
 
-    // Константы вещественные  в экспоненциальной форме
+    // Константы вещественные в экспоненциальной форме
     if ((t[uk]>='0') && (t[uk]<='9')){
         l[i++]=t[uk++];
         while ((t[uk]>='0') && (t[uk]<='9'))
@@ -119,7 +180,7 @@ N2:                     l[i++]=t[uk++];
         if( (t[uk]=='E')||(t[uk]=='e') ) 
             goto N1; 
         
-        PrintError("Неверная вещественная константа в экспоненциальной форме", "");
+        PrintError("Неверная вещественная константа в экспоненциальной форме", "", errorLine, errorColumn);
         return TErr;
     }
     else if (t[uk]=='.'){
@@ -127,7 +188,7 @@ N2:                     l[i++]=t[uk++];
         if ((t[uk]>='0') && (t[uk]<='9'))
             goto N3;
         else{
-            PrintError("Неверная вещественная константа в экспоненциальной форме", "");
+            PrintError("Неверная вещественная константа в экспоненциальной форме", "", errorLine, errorColumn);
             return TErr;
         }
     }
@@ -160,7 +221,7 @@ N2:                     l[i++]=t[uk++];
                 return TConstChar;
             }     
         }
-        PrintError("Неверная символьная константа","");
+        PrintError("Неверная символьная константа","", errorLine, errorColumn);
         return TErr;
     }
 
@@ -245,7 +306,7 @@ N2:                     l[i++]=t[uk++];
             l[i++]=t[uk++]; 
             return TAnd; 
         }
-        PrintError("Неверная логическая операция", "");
+        PrintError("Неверная логическая операция", "", errorLine, errorColumn);
         return TErr;
     }
     else if (t[uk]=='|'){
@@ -254,13 +315,15 @@ N2:                     l[i++]=t[uk++];
             l[i++]=t[uk++]; 
             return TOr; 
         }
-        PrintError("Неверная логическая операция", "");
+        PrintError("Неверная логическая операция", "", errorLine, errorColumn);
         return TErr;
     }
     
     // Несуществующий символ
     else { 
-        PrintError("Несуществующий символ", l);
+        // Создаем строку с ошибочным символом
+        char errorChar[2] = {t[uk], '\0'};
+        PrintError("Несуществующий символ", errorChar, errorLine, errorColumn);
         uk++;
         return TErr;
     }
