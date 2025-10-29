@@ -6,22 +6,20 @@
 #include <string.h>
 #include <algorithm>
 
-extern class TScaner* globalScanner;
+extern TScaner* globalScanner;
 
-enum DATA_TYPE {TYPE_UNKNOWN=1, TYPE_BOOL, TYPE_CHAR, TYPE_DOUBLE, 
-    TYPE_INTEGER, TYPE_FUNCT, TYPE_CONST
-};
+enum ID_TYPE {ID_UNKNOWN=1, TYPE_FUNCT, TYPE_CONST, TYPE_VAR};
+
+enum DATA_TYPE {DATA_UNKNOWN=1, TYPE_BOOL, TYPE_CHAR, TYPE_DOUBLE, TYPE_INTEGER};
 
 struct Node{
 	// данные, общие для всех типов объектов
 	TypeLex id;		// идентификатор переменной
+	int IDType;		// тип переменной
 	int DataType;		// тип значения
 	 
 	// обязательные данные для некоторых типов объектов
-	int FlagConst = 0;		// признак константы
 	char * Data;		// ссылка на значение константы или NULL
-	// необязательные данные
-	int FlagInit;		// Флаг начальной инициализации
 };
 
 class Tree{
@@ -46,13 +44,13 @@ void Print(void);			// отладочная программа печати де
 // СЕМАНТИЧЕСКИЕ ПОДПРОГРАММЫ
 void SetCur(Tree * a) ;                         // установить текущий узел дерева
 Tree * GetCur(void);                            // получить значение текущего узла дерева
-Tree * SemInclude(TypeLex a, DATA_TYPE t);      // занесение идентификатора a в таблицу с типом t
-void SemSetType(Tree *Addr, DATA_TYPE t);       // установить тип t для переменной по адресу Addr
+Tree * SemInclude(TypeLex a, ID_TYPE i, DATA_TYPE t);      // занесение идентификатора a в таблицу с типом t
 Tree * SemGetType(TypeLex a);           // найти в таблице переменную с именем a и вернуть ссылку на соответствующий элемент дерева
 Tree * SemGetFunct(TypeLex a);          // найти в таблице функцию с именем a и вернуть ссылку на соответствующий элемент дерева
 Tree * SemGetConst(TypeLex a);          // найти в таблице константу с именем a и вернуть ссылку на соответствующий элемент дерева
 int DupControl(Tree *Addr, TypeLex a);  // проверка идентификатора а на повторное описание внутри блока
 void SemEnterBlock(void);               // создать новую область видимости для составного оператора
 void SemLeaveBlock(void);               //выйти из текущей области видимости
+void CheckReturnType(DATA_TYPE expectedType, DATA_TYPE actualType); // Проверка типа возвращаемого значения функции
 };
 #endif

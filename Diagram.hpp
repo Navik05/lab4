@@ -3,11 +3,14 @@
 
 #include "defs.hpp"
 #include "Scaner.hpp"
+#include "Semant.hpp"
 
 class TDiagram
 {
 private:
     TScaner *sc;
+    Tree *Root;  // Указатель на семантическое дерево
+
     // функции синтаксических диаграмм
     void W(); // объявление константы
     void D(); // объявление функции
@@ -26,9 +29,11 @@ private:
     void U(); // эл.выр.
     void C(); // константа
     void Z(); // вызов функции
+    DATA_TYPE GetDataType(int token);
 public:
-    TDiagram(TScaner * s) {sc=s;}
-    ~TDiagram(){}
+    TDiagram(TScaner * s);
+    ~TDiagram();
+    Tree* GetSemanticTree() { return Root; }
     void S(); // программа
 };
 #endif

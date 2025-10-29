@@ -1,10 +1,10 @@
 int main (){
-    for(;;){
-        for(;;){
-            char a
-        }
-    }
+    char a, b;
+    a = false;
+    for(a=true;a>c);
 }
+
+
 
 
 

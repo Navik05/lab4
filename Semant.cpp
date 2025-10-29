@@ -2,6 +2,13 @@
 
 TScaner* globalScanner = nullptr;
 
+// Деструктор
+Tree::~Tree() {
+    if (n != NULL) {
+        delete n;
+    }
+}
+
 // конструктор создает узел с заданными связями и данными
 Tree::Tree (Tree * l, Tree * r, Tree * u, Node * d){
     n= new Node();
@@ -39,13 +46,19 @@ Tree * Tree::FindUp(TypeLex id){
 
 // Поиск элемента id вверх по дереву от текущей вершины From. Поиск осуществляется на одном уровне вложенности по левым связям
 Tree * Tree::FindUpOneLevel(Tree * From, TypeLex id){
-    Tree * i=From;          // текущая вершина поиска
-    while( (i!=NULL) && ( i->Up->Right != i)){
-        if (memcmp(id, i->n->id, std::max(strlen(i->n->id),strlen(id)))==0)
-        return i;               // нaшли совпадающий идентификатор
-        i=i->Up;                // поднимаемся наверх по связям
+    Tree * i = From;  // текущая вершина поиска
+    
+    while (i != NULL && i->Up != NULL) {
+        // Проверяем, что мы на том же уровне (левый потомок)
+        if (i->Up->Right != i) {
+            // Сравниваем идентификаторы
+            if (memcmp(id, i->n->id, std::max(strlen(i->n->id), strlen(id))) == 0) {
+                return i;  // нашли совпадающий идентификатор
+            }
+        }
+        i = i->Up;  // поднимаемся наверх по связям
     }
-    return NULL;
+    return NULL;  // не нашли
 }
 
 // отладочная программа печати дерева
@@ -71,31 +84,41 @@ Tree* Tree::Cur=(Tree*)NULL;
 }
 
 // занесение идентификатора a в таблицу с типом t
-Tree * Tree::SemInclude(TypeLex a, DATA_TYPE t){
+Tree * Tree::SemInclude(TypeLex a, ID_TYPE i, DATA_TYPE t){
     if (DupControl(Cur, a))
         globalScanner->PrintError("Повторное описание идентификатора ",a,   globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
     Tree * v;
     Node b;
-    if (t!=TYPE_FUNCT){
+    if (i==TYPE_CONST){
         memcpy(b.id,a,strlen(a)+1);
+        b.IDType = i;
         b.DataType=t;
         b.Data=NULL;
-        if(t==TYPE_CONST)
-            b.FlagConst = 1;
-        Cur->SetLeft (&b);      // сделали вершину - переменную или константу
+        Cur->SetLeft (&b);      // сделали вершину - константу
         Cur = Cur->Left;
         return Cur;
     }
-    else
+    else if(i==TYPE_VAR){
+        memcpy(b.id,a,strlen(a)+1);
+        b.IDType=i;
+        b.DataType=t;
+        b.Data=NULL;
+        Cur->SetLeft (&b);      // сделали вершину - переменную
+        Cur = Cur->Left;
+        return Cur;
+    }
+    else if(i==TYPE_FUNCT)
     {
         memcpy(b.id,a,strlen(a)+1);
+        b.IDType=i;
         b.DataType=t;
         b.Data=NULL;
         Cur->SetLeft (&b);          // сделали вершину - функцию
         Cur = Cur->Left;
         v=Cur;                      // это точка возврата после выхода из функции
         memcpy(&b.id,&"",2);
-        b.DataType=TYPE_UNKNOWN;
+        b.IDType= ID_UNKNOWN;
+        b.DataType=DATA_UNKNOWN;
         b.Data=NULL;
         Cur->SetRight (&b);         // сделали пустую вершину
         Cur = Cur->Right;
@@ -103,16 +126,11 @@ Tree * Tree::SemInclude(TypeLex a, DATA_TYPE t){
     }
 }
 
-// установить тип t для переменной по адресу Addr
-void Tree::SemSetType(Tree* Addr, DATA_TYPE t) {
-    Addr->n->DataType=t;
-}
-
 // найти в таблице переменную с именем a и вернуть ссылку на соответствующий элемент дерева
 Tree * Tree::SemGetType(TypeLex a){
     Tree * v=FindUp(a);
     if (v==NULL) globalScanner->PrintError("Отсутствует описание идентификатора ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
-    if (v->n->DataType==TYPE_FUNCT) globalScanner->PrintError("Неверное использование вызова функции ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+    if (v->n->IDType==TYPE_FUNCT) globalScanner->PrintError("Неверное использование вызова функции ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
     return v;
 }
 
@@ -120,7 +138,15 @@ Tree * Tree::SemGetType(TypeLex a){
 Tree * Tree::SemGetFunct(TypeLex a) {
     Tree * v=FindUp(a);
     if (v==NULL) globalScanner->PrintError("Отсутствует описание функции ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
-    if (v->n->DataType!=TYPE_FUNCT) globalScanner->PrintError("Не является функцией идентификатор ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+    if (v->n->IDType!=TYPE_FUNCT) globalScanner->PrintError("Не является функцией идентификатор ",a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+    return v;
+}
+
+// найти в таблице константу с именем a и вернуть ссылку на соответствующий элемент дерева
+Tree * Tree::SemGetConst(TypeLex a) {
+    Tree * v = FindUp(a);
+    if (v == NULL) globalScanner->PrintError("Отсутствует описание константы ", a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+    if (v->n->IDType != TYPE_CONST) globalScanner->PrintError("Не является константой идентификатор", a, globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
     return v;
 }
 
@@ -128,4 +154,31 @@ Tree * Tree::SemGetFunct(TypeLex a) {
 int Tree::DupControl(Tree* Addr, TypeLex a){
     if (FindUpOneLevel(Addr, a)==NULL) return 0;
     return 1;
+}
+
+// Управление областями видимости
+void Tree::SemEnterBlock(void) {
+    // Создаем новый узел для блока
+    Node blockNode;
+    strcpy(blockNode.id, "BLOCK");
+    blockNode.IDType = ID_UNKNOWN;
+    blockNode.DataType = DATA_UNKNOWN;
+    
+    Tree* newBlock = new Tree(NULL, NULL, Cur, &blockNode);
+    Cur = newBlock;
+}
+
+void Tree::SemLeaveBlock(void) {
+    if (Cur != NULL && Cur->Up != NULL) {
+        Tree* parent = Cur->Up;
+        delete Cur;  // Удаляем текущий блок
+        Cur = parent;
+    }
+}
+
+// Проверка типа возвращаемого значения функции
+void Tree::CheckReturnType(DATA_TYPE expectedType, DATA_TYPE actualType) {
+    if (expectedType != actualType) {
+        globalScanner->PrintError("Тип возвращаемого значения не совпадает с объявленным типом функции", "", globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+    }
 }
