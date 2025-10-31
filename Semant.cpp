@@ -20,7 +20,10 @@ Tree::Tree (Tree * l, Tree * r, Tree * u, Node * d){
 Tree::Tree (void){
     n= new Node();
     Up=NULL; Left=NULL; Right=NULL;
-    memcpy(n,&("------"), sizeof(Node));
+    strcpy(n->id, "------");
+    n->IDType = ID_UNKNOWN;
+    n->DataType = DATA_UNKNOWN;
+    n->Data[0] = '\0';
 }
 
 // создать левого потомка от текущей вершины this
@@ -83,7 +86,7 @@ Tree* Tree::Cur=(Tree*)NULL;
     return Cur;
 }
 
-// занесение идентификатора a в таблицу с типом t
+// занесение идентификатора a в таблицу
 Tree * Tree::SemInclude(TypeLex a, ID_TYPE i, DATA_TYPE t){
     if (DupControl(Cur, a))
         globalScanner->PrintError("Повторное описание идентификатора ",a,   globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
@@ -93,7 +96,7 @@ Tree * Tree::SemInclude(TypeLex a, ID_TYPE i, DATA_TYPE t){
         memcpy(b.id,a,strlen(a)+1);
         b.IDType = i;
         b.DataType=t;
-        b.Data=NULL;
+        b.Data[0] = '\0';
         Cur->SetLeft (&b);      // сделали вершину - константу
         Cur = Cur->Left;
         return Cur;
@@ -102,24 +105,27 @@ Tree * Tree::SemInclude(TypeLex a, ID_TYPE i, DATA_TYPE t){
         memcpy(b.id,a,strlen(a)+1);
         b.IDType=i;
         b.DataType=t;
-        b.Data=NULL;
+        b.Data[0] = '\0';
         Cur->SetLeft (&b);      // сделали вершину - переменную
         Cur = Cur->Left;
         return Cur;
     }
-    else if(i==TYPE_FUNCT)
+    else 
     {
-        memcpy(b.id,a,strlen(a)+1);
+        memcpy(b.id,a,strlen(a)+1);     // создаём вершину - функцию
         b.IDType=i;
         b.DataType=t;
-        b.Data=NULL;
-        Cur->SetLeft (&b);          // сделали вершину - функцию
+        b.Data[0] = '\0';
+        Cur->SetLeft (&b);          
         Cur = Cur->Left;
+
         v=Cur;                      // это точка возврата после выхода из функции
-        memcpy(&b.id,&"",2);
+        
+        memcpy(b.id,a,strlen(a)+1);
         b.IDType= ID_UNKNOWN;
         b.DataType=DATA_UNKNOWN;
-        b.Data=NULL;
+        b.Data[0] = '\0';
+
         Cur->SetRight (&b);         // сделали пустую вершину
         Cur = Cur->Right;
         return v;
@@ -142,37 +148,55 @@ Tree * Tree::SemGetFunct(TypeLex a) {
     return v;
 }
 
-// найти в таблице константу с именем a и вернуть ссылку на соответствующий элемент дерева
-Tree * Tree::SemGetConst(TypeLex a) {
-    Tree * v = FindUp(a);
-    if (v == NULL) globalScanner->PrintError("Отсутствует описание константы ", a,  globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
-    if (v->n->IDType != TYPE_CONST) globalScanner->PrintError("Не является константой идентификатор", a, globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
-    return v;
-}
-
 // Проверка идентификатора а на повторное описание внутри блока
 int Tree::DupControl(Tree* Addr, TypeLex a){
     if (FindUpOneLevel(Addr, a)==NULL) return 0;
     return 1;
 }
 
-// Управление областями видимости
-void Tree::SemEnterBlock(void) {
-    // Создаем новый узел для блока
-    Node blockNode;
-    strcpy(blockNode.id, "BLOCK");
-    blockNode.IDType = ID_UNKNOWN;
-    blockNode.DataType = DATA_UNKNOWN;
-    
-    Tree* newBlock = new Tree(NULL, NULL, Cur, &blockNode);
-    Cur = newBlock;
-}
-
-void Tree::SemLeaveBlock(void) {
-    if (Cur != NULL && Cur->Up != NULL) {
-        Tree* parent = Cur->Up;
-        delete Cur;  // Удаляем текущий блок
-        Cur = parent;
+// Заненсения значения переменной
+void Tree::SetData(TypeLex a, TypeLex data){
+    Tree * v = FindUp(a);
+    if (v->n->IDType == TYPE_CONST && v->n->Data[0]!='\0'){
+            globalScanner->PrintError("Нельзя изменить значение константы", a, globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+            return;
+        }
+    switch(v->n->DataType) {        
+         case TYPE_DOUBLE: {
+            // Проверяем, что значение - вещественное число
+            if (data[0] != '.' && (data[0] < '0' || data[0] > '9')) {
+                globalScanner->PrintError("Несоответствие типов: ожидается вещественное число", data, globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+                return;
+            }
+            else
+                strcpy(v->n->Data, data);
+            break;
+        } 
+        
+        case TYPE_CHAR: {
+            // Проверяем, что значение - символьная константа
+            if (strlen(data) != 1) {
+                globalScanner->PrintError("Несоответствие типов: ожидается символьная константа", data, globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+                return;
+            }
+            else
+                strcpy(v->n->Data, data);
+            break;
+        } 
+        
+        case TYPE_BOOL: {
+            // Проверяем, что значение - логическая константа
+            if(strcmp(data, "true") != 0 && strcmp(data, "false") != 0){
+                globalScanner->PrintError("Несоответствие типов: ожидается true или false", data, globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
+                return;
+            }
+            else
+                strcpy(v->n->Data, data);
+            break;
+        }
+        
+        default:
+            globalScanner->PrintError("Неизвестный тип данных переменной", a, globalScanner->GetCurrentLine(), globalScanner->GetCurrentColumn());
     }
 }
 

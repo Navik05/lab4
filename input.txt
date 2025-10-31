@@ -1,8 +1,22 @@
+const char n = 'b';
+
 int main (){
-    char a, b;
-    a = false;
-    for(a=true;a>c);
+    bool b;
+    bool k;
+    char a;
+    double ber = 5115.5e-7;
+char dasad(){
+    bool e;
+    e=false;
+    {;;;;;;;;;;;;;{{{{{{{}}}}}}}}
+    for(e=true;;){
+        for(e=true;;){
+            for(e=true;;);;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        }
+    }
 }
+}
+
 
 
 

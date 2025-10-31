@@ -1,5 +1,6 @@
 #include "Diagram.hpp"
 #include "Semant.hpp"
+#include <stack>
 
 // Преобразование лексем в типы данных
 DATA_TYPE TDiagram::GetDataType(int token) {
@@ -11,6 +12,8 @@ DATA_TYPE TDiagram::GetDataType(int token) {
         default: return DATA_UNKNOWN;
     }
 }
+
+TypeLex data;
 
 TDiagram::TDiagram(TScaner * s) {
     sc = s;
@@ -83,7 +86,7 @@ void TDiagram::D(){
     }
 
     // Заносим функцию в дерево
-    Root->SemInclude(l, TYPE_FUNCT, funcType);
+    Tree *v = Root->SemInclude(l, TYPE_FUNCT, funcType);
 
     t=sc->Scaner(l);
     if(t!=TLS) sc->PrintError("ожидался символ (",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
@@ -92,12 +95,8 @@ void TDiagram::D(){
     t=sc->Scaner(l);
     if(t!=TFLS) sc->PrintError("ожидался символ {",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
 
-    // Вход в новую область видимости
-    Root->SemEnterBlock();
     F();
-
-    // Выход из области видимости функции
-    Root->SemLeaveBlock();
+    Root->SetCur(v) ;
 
     t=sc->Scaner(l);
     if(t!=TFPS) sc->PrintError("ожидался символ }",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
@@ -174,11 +173,10 @@ void TDiagram::I(){
     if(t!=TTZpt) sc->PrintError("ожидался знак ;",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
 }
 
-
 // объявление константы
 void TDiagram::W(){
     int t, uk;
-    TypeLex l;
+    TypeLex l, l1;
     DATA_TYPE varType;
 
     t=sc->Scaner(l);
@@ -198,10 +196,17 @@ void TDiagram::W(){
 
     // Занесение константы в таблицу
     Root->SemInclude(l, TYPE_CONST, varType);
+    strcpy(l1,l);
 
     t=sc->Scaner(l);
     if (t!=TSave) sc->PrintError("ожидался знак =",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
     C();
+
+    if(data[0]!='\0'){
+        Root->SetData(l1, data);
+        data[0]='\0';
+    }
+
     t=sc->Scaner(l);
     }while(t==TZpt);
 
@@ -211,14 +216,19 @@ void TDiagram::W(){
 // присваивание
 void TDiagram::K(){
     int t;
-    TypeLex l;
+    TypeLex l, l1;
 
     t=sc->Scaner(l);
     if (t!=TIdent) sc->PrintError("ожидался идентификатор",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
     Root->SemGetType(l);
+    strcpy(l1,l);
     t=sc->Scaner(l);
     if (t!=TSave) sc->PrintError("ожидался знак =",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
     O();
+    if(data[0]!='\0'){
+        Root->SetData(l1, data);
+        data[0]='\0';
+    }
 }
 
 // оператор или описание
@@ -274,6 +284,7 @@ void TDiagram::Z(){
 
     t=sc->Scaner(l);
     if (t!=TIdent) sc->PrintError("ожидался идентификатор",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
+
     // Проверяем существование функции
     Root->SemGetFunct(l);
 
@@ -433,7 +444,7 @@ void TDiagram::U(){
 
     uk=sc->GetUK();
     t=sc->Scaner(l);
-    if(t==TTrue && t==TFalse && t==TConsExp && t==TConstChar){
+    if(t==TTrue || t==TFalse || t==TConsExp || t==TConstChar){
         sc->PutUK(uk);
         C();
     } 
@@ -443,6 +454,7 @@ void TDiagram::U(){
         if (t!=TPS) sc->PrintError("ожидался символ )",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
     }
     else if(t==TIdent){
+        Root->SemGetType(l);
         uk2=sc->GetUK();
         t=sc->Scaner(l);
         if(t==TLS) {
@@ -468,4 +480,5 @@ void TDiagram::C(){
     t=sc->Scaner(l);
     if(t!=TTrue && t!=TFalse && t!=TConsExp && t!=TConstChar)
         sc->PrintError("ошибочное значение константы",l, sc->GetCurrentLine(), sc->GetCurrentColumn());
+    strcpy(data, l);
 }

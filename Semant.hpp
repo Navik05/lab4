@@ -19,7 +19,7 @@ struct Node{
 	int DataType;		// тип значения
 	 
 	// обязательные данные для некоторых типов объектов
-	char * Data;		// ссылка на значение константы или NULL
+	TypeLex Data;		// ссылка на значение константы или NULL	
 };
 
 class Tree{
@@ -47,10 +47,8 @@ Tree * GetCur(void);                            // получить значен
 Tree * SemInclude(TypeLex a, ID_TYPE i, DATA_TYPE t);      // занесение идентификатора a в таблицу с типом t
 Tree * SemGetType(TypeLex a);           // найти в таблице переменную с именем a и вернуть ссылку на соответствующий элемент дерева
 Tree * SemGetFunct(TypeLex a);          // найти в таблице функцию с именем a и вернуть ссылку на соответствующий элемент дерева
-Tree * SemGetConst(TypeLex a);          // найти в таблице константу с именем a и вернуть ссылку на соответствующий элемент дерева
 int DupControl(Tree *Addr, TypeLex a);  // проверка идентификатора а на повторное описание внутри блока
-void SemEnterBlock(void);               // создать новую область видимости для составного оператора
-void SemLeaveBlock(void);               //выйти из текущей области видимости
 void CheckReturnType(DATA_TYPE expectedType, DATA_TYPE actualType); // Проверка типа возвращаемого значения функции
+void SetData(TypeLex a, TypeLex data);
 };
 #endif
